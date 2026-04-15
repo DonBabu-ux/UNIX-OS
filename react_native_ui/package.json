@@ -1,0 +1,36 @@
+{
+  "name": "smart-launcher-ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "web": "vite",
+    "dev": "vite",
+    "build:web": "vite build"
+  },
+  "dependencies": {
+    "@tiptap/extension-table": "^3.22.3",
+    "@tiptap/extension-table-cell": "^3.22.3",
+    "@tiptap/extension-table-header": "^3.22.3",
+    "@tiptap/extension-table-row": "^3.22.3",
+    "@tiptap/extension-text-align": "^3.22.3",
+    "@tiptap/extension-underline": "^3.22.3",
+    "@tiptap/react": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
+    "lucide-react": "^1.8.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.72.3",
+    "react-native-gesture-handler": "^2.31.1",
+    "react-native-reanimated": "^3.3.0",
+    "react-native-svg": "^15.15.4",
+    "react-native-vector-icons": "^10.0.0",
+    "react-native-web": "^0.19.6",
+    "zustand": "^4.3.9"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.3",
+    "vite": "^4.4.5"
+  }
+}

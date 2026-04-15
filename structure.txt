@@ -1,0 +1,75 @@
+LAUNCHER OS Workspace
++--- android_native_core
+|   +--- app
+|   |   +--- build.gradle
+|   |   \--- src
+|   |       \--- main
+|   |           +--- AndroidManifest.xml
+|   |           +--- java
+|   |           |   \--- com
+|   |           |       \--- launcher
+|   |           |           +--- LauncherActivity.kt
+|   |           |           +--- LauncherPackage.kt
+|   |           |           +--- MainActivity.kt
+|   |           |           +--- MainApplication.kt
+|   |           |           \--- modules
+|   |           |               +--- AppControlModule.kt
+|   |           |               +--- AppLauncherModule.kt
+|   |           |               \--- AppListModule.kt
+|   |           \--- res
+|   |               \--- layout
+|   |                   \--- activity_launcher.xml
+|   +--- build.gradle
+|   \--- settings.gradle
++--- bridge_layer
+|   +--- AppLauncherBridge.ts
+|   \--- AppListBridge.ts
++--- devops
+|   +--- deployment_guide.md
+|   \--- github-actions.yml
++--- generate_tree.js
+\--- react_native_ui
+    +--- app.json
+    +--- App.tsx
+    +--- index.html
+    +--- index.js
+    +--- local_storage
+    |   +--- storage.ts
+    |   \--- storage.web.ts
+    +--- package-lock.json
+    +--- package.json
+    +--- src
+    |   +--- apps
+    |   |   +--- FileManager
+    |   |   |   \--- FileManager.tsx
+    |   |   \--- NotesApp
+    |   |       \--- NotesApp.tsx
+    |   +--- components
+    |   |   +--- AppIcon.tsx
+    |   |   +--- DesktopGrid.tsx
+    |   |   +--- StartMenu.tsx
+    |   |   \--- Taskbar.tsx
+    |   +--- features
+    |   |   +--- hideApps.ts
+    |   |   \--- lockApps.ts
+    |   +--- navigation
+    |   |   \--- RootNavigator.tsx
+    |   +--- payments
+    |   |   \--- subscription.ts
+    |   +--- screens
+    |   |   +--- AppDrawer.tsx
+    |   |   +--- HomeScreen.tsx
+    |   |   \--- ThemeSettings.tsx
+    |   +--- state
+    |   |   +--- slices
+    |   |   |   +--- appsSlice.ts
+    |   |   |   +--- layoutSlice.ts
+    |   |   |   +--- settingsSlice.ts
+    |   |   |   \--- userSlice.ts
+    |   |   \--- store.ts
+    |   \--- theme
+    |       +--- themeProvider.ts
+    |       \--- themes
+    |           \--- index.ts
+    +--- vite.config.js
+    \--- web-entry.js
