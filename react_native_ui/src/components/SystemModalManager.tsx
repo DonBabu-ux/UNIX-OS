@@ -5,6 +5,7 @@ import {
     Cpu, Shield, Cloud, Activity, Zap, Lock, Terminal, Database, 
     Share2, AlertTriangle, RefreshCw, List, Trash2, X, Sparkles, CheckCircle, Info 
 } from 'lucide-react';
+import { useResponsive } from '../state/ResponsiveManager';
 import { useSystemStore, SystemModal } from '../state/slices/systemSlice';
 import { useTheme } from '../theme/themeProvider';
 import { 
@@ -19,6 +20,7 @@ const SystemModalManager: React.FC = () => {
     const { modalStack, closeModal, setAdminAuth } = useSystemStore();
     const activeModal = modalStack[modalStack.length - 1];
     
+    const { isMobile, isTablet } = useResponsive();
     const [adminInput, setAdminInput] = React.useState('');
     const [error, setError] = React.useState(false);
     const [activeTab, setActiveTab] = React.useState('KERNEL');
@@ -76,59 +78,50 @@ const SystemModalManager: React.FC = () => {
                 );
             case 'ADMIN_CONTROL':
                 return (
-                    <View style={styles.workspace}>
-                        {/* Sidebar Navigation */}
-                        <View style={[styles.sidebar, { borderRightColor: theme.border }]}>
-                            <TouchableOpacity onPress={() => setActiveTab('KERNEL')} style={[styles.navItem, activeTab === 'KERNEL' && styles.navActive]}>
-                                <Cpu size={18} color={activeTab === 'KERNEL' ? theme.accent : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'KERNEL' && {color: '#fff'}]}>KERNEL CORE</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('SECURITY')} style={[styles.navItem, activeTab === 'SECURITY' && styles.navActive]}>
-                                <Shield size={18} color={activeTab === 'SECURITY' ? theme.success : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'SECURITY' && {color: '#fff'}]}>SECURITY</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('BOOT')} style={[styles.navItem, activeTab === 'BOOT' && styles.navActive]}>
-                                <Zap size={18} color={activeTab === 'BOOT' ? theme.warning : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'BOOT' && {color: '#fff'}]}>BOOT ENGINE</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('NETWORK')} style={[styles.navItem, activeTab === 'NETWORK' && styles.navActive]}>
-                                <Cloud size={18} color={activeTab === 'NETWORK' ? theme.primary : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'NETWORK' && {color: '#fff'}]}>CLOUD / NET</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('TASKS')} style={[styles.navItem, activeTab === 'TASKS' && styles.navActive]}>
-                                <Activity size={18} color={activeTab === 'TASKS' ? theme.warning : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'TASKS' && {color: '#fff'}]}>RESOURCES</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('AI')} style={[styles.navItem, activeTab === 'AI' && styles.navActive]}>
-                                <Zap size={18} color={activeTab === 'AI' ? theme.warning : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'AI' && {color: '#fff'}]}>AI PIPELINE</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('GOVERNANCE')} style={[styles.navItem, activeTab === 'GOVERNANCE' && styles.navActive]}>
-                                <Database size={18} color={activeTab === 'GOVERNANCE' ? theme.accent : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'GOVERNANCE' && {color: '#fff'}]}>GOVERNANCE</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('AUDIT')} style={[styles.navItem, activeTab === 'AUDIT' && styles.navActive]}>
-                                <List size={18} color={activeTab === 'AUDIT' ? '#fff' : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'AUDIT' && {color: '#fff'}]}>AUDIT LOGS</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setActiveTab('RECOVERY')} style={[styles.navItem, activeTab === 'RECOVERY' && styles.navActive]}>
-                                <RefreshCw size={18} color={activeTab === 'RECOVERY' ? theme.primary : 'rgba(255,255,255,0.4)'} />
-                                <Text style={[styles.navItemText, activeTab === 'RECOVERY' && {color: '#fff'}]}>RECOVERY</Text>
-                            </TouchableOpacity>
-
-                            <View style={{flex: 1}} />
-
-                            <TouchableOpacity 
-                                onPress={() => setActiveTab('DANGER')} 
-                                style={[styles.navItem, activeTab === 'DANGER' && { backgroundColor: theme.error + '15' }]}
+                    <View style={[styles.workspace, isMobile && styles.mobileWorkspace]}>
+                        {/* Sidebar Navigation - Adaptive */}
+                        <View style={[
+                            isMobile ? styles.topNav : styles.sidebar, 
+                            { borderRightColor: theme.border, borderBottomColor: theme.border }
+                        ]}>
+                            <ScrollView 
+                                horizontal={isMobile} 
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={isMobile ? styles.topNavContent : undefined}
                             >
-                                <AlertTriangle size={18} color={theme.error} />
-                                <Text style={[styles.navItemText, {color: theme.error}]}>DANGER ZONE</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('KERNEL')} style={[styles.navItem, activeTab === 'KERNEL' && styles.navActive, isMobile && styles.mobileNavItem]}>
+                                    <Cpu size={isMobile ? 14 : 18} color={activeTab === 'KERNEL' ? theme.accent : 'rgba(255,255,255,0.4)'} />
+                                    <Text style={[styles.navItemText, activeTab === 'KERNEL' && {color: '#fff'}]}>KERNEL</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('SECURITY')} style={[styles.navItem, activeTab === 'SECURITY' && styles.navActive, isMobile && styles.mobileNavItem]}>
+                                    <Shield size={isMobile ? 14 : 18} color={activeTab === 'SECURITY' ? theme.success : 'rgba(255,255,255,0.4)'} />
+                                    <Text style={[styles.navItemText, activeTab === 'SECURITY' && {color: '#fff'}]}>SECURITY</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('BOOT')} style={[styles.navItem, activeTab === 'BOOT' && styles.navActive, isMobile && styles.mobileNavItem]}>
+                                    <Zap size={isMobile ? 14 : 18} color={activeTab === 'BOOT' ? theme.warning : 'rgba(255,255,255,0.4)'} />
+                                    <Text style={[styles.navItemText, activeTab === 'BOOT' && {color: '#fff'}]}>BOOT</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('NETWORK')} style={[styles.navItem, activeTab === 'NETWORK' && styles.navActive, isMobile && styles.mobileNavItem]}>
+                                    <Cloud size={isMobile ? 14 : 18} color={activeTab === 'NETWORK' ? theme.primary : 'rgba(255,255,255,0.4)'} />
+                                    <Text style={[styles.navItemText, activeTab === 'NETWORK' && {color: '#fff'}]}>CLOUD</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('TASKS')} style={[styles.navItem, activeTab === 'TASKS' && styles.navActive, isMobile && styles.mobileNavItem]}>
+                                    <Activity size={isMobile ? 14 : 18} color={activeTab === 'TASKS' ? theme.warning : 'rgba(255,255,255,0.4)'} />
+                                    <Text style={[styles.navItemText, activeTab === 'TASKS' && {color: '#fff'}]}>TASKS</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('GOVERNANCE')} style={[styles.navItem, activeTab === 'GOVERNANCE' && styles.navActive, isMobile && styles.mobileNavItem]}>
+                                    <Database size={isMobile ? 14 : 18} color={activeTab === 'GOVERNANCE' ? theme.accent : 'rgba(255,255,255,0.4)'} />
+                                    <Text style={[styles.navItemText, activeTab === 'GOVERNANCE' && {color: '#fff'}]}>DATA</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setActiveTab('DANGER')} style={[styles.navItem, activeTab === 'DANGER' && { backgroundColor: theme.error + '15' }, isMobile && styles.mobileNavItem]}>
+                                    <AlertTriangle size={isMobile ? 14 : 18} color={theme.error} />
+                                    <Text style={[styles.navItemText, {color: theme.error}]}>DANGER</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
                         </View>
 
                         {/* Main Interaction Area */}
-                        <View style={styles.mainArea}>
+                        <ScrollView style={styles.mainArea}>
                             {activeTab === 'KERNEL' && <KernelModule />}
                             {activeTab === 'SECURITY' && <SecurityCenter />}
                             {activeTab === 'BOOT' && <BootEngineModule />}
@@ -141,14 +134,14 @@ const SystemModalManager: React.FC = () => {
                             {activeTab === 'DANGER' && (
                                 <View style={styles.dangerCenter}>
                                     <AlertTriangle size={48} color={theme.error} />
-                                    <Text style={[styles.dangerTitle, {color: '#fff'}]}>CRITICAL DESTRUCTIVE LAYER</Text>
-                                    <Text style={styles.dangerDesc}>These actions bypass standard logic gates and directly affect the OS kernel and local storage partitions.</Text>
+                                    <Text style={[styles.dangerTitle, {color: '#fff'}]}>CRITICAL LAYER</Text>
+                                    <Text style={styles.dangerDesc}>Actions directly affect the OS kernel and local storage.</Text>
                                     <TouchableOpacity style={[styles.destroyBtn, {backgroundColor: theme.error}]}>
-                                        <Text style={styles.destroyText}>WIPE ALL DATA & RESET KERNEL</Text>
+                                        <Text style={styles.destroyText}>WIPE ALL DATA</Text>
                                     </TouchableOpacity>
                                 </View>
                             )}
-                        </View>
+                        </ScrollView>
                     </View>
                 );
             case 'ERROR':
@@ -173,8 +166,8 @@ const SystemModalManager: React.FC = () => {
                     style={[styles.modalSheet, { 
                         backgroundColor: theme.background, 
                         borderColor: theme.border,
-                        width: Platform.OS === 'web' ? 480 : W * 0.9,
-                        maxHeight: H * 0.8
+                        width: Platform.OS === 'web' ? (isMobile ? W * 0.95 : 480) : (isMobile ? W * 0.94 : W * 0.8),
+                        maxHeight: isMobile ? H * 0.9 : H * 0.8
                     }]}
                 >
                     {/* Header */}
@@ -244,16 +237,20 @@ const styles = StyleSheet.create({
     statusItem: { fontSize: 9, fontWeight: '900', letterSpacing: 1 },
     scrollTitle: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 20 },
     workspace: { flexDirection: 'row', height: H * 0.8, minHeight: 600 },
+    mobileWorkspace: { flexDirection: 'column' },
     sidebar: { width: 120, padding: 8, borderRightWidth: 1, gap: 2 },
-    navItem: { flexDirection: 'column', alignItems: 'center', paddingVertical: 10, borderRadius: 10, gap: 4 },
+    topNav: { height: 60, borderBottomWidth: 1 },
+    topNavContent: { paddingHorizontal: 12, gap: 12, alignItems: 'center' },
+    navItem: { flexDirection: 'column', alignItems: 'center', paddingVertical: 10, borderRadius: 10, gap: 4, minWidth: 60 },
+    mobileNavItem: { paddingVertical: 8, height: 48, justifyContent: 'center' },
     navActive: { backgroundColor: 'rgba(255,255,255,0.05)' },
     navItemText: { fontSize: 8, fontWeight: '800', textAlign: 'center', color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 },
-    mainArea: { flex: 1, padding: 24, backgroundColor: 'rgba(0,0,0,0.1)' },
-    dangerCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 16 },
-    dangerTitle: { fontSize: 20, fontWeight: '900', textAlign: 'center' },
-    dangerDesc: { fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 18, maxWidth: 300 },
-    destroyBtn: { paddingHorizontal: 32, paddingVertical: 18, borderRadius: 12 },
-    destroyText: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 1 }
+    mainArea: { flex: 1, padding: 20, backgroundColor: 'rgba(0,0,0,0.1)' },
+    dangerCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 12 },
+    dangerTitle: { fontSize: 18, fontWeight: '900', textAlign: 'center' },
+    dangerDesc: { fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 16, maxWidth: 260 },
+    destroyBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 10 },
+    destroyText: { color: '#fff', fontSize: 11, fontWeight: '900', letterSpacing: 1 }
 });
 
 export default SystemModalManager;

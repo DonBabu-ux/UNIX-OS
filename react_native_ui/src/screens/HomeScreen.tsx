@@ -14,6 +14,9 @@ import BottomNav from '../components/BottomNav';
 import StartMenu from '../components/StartMenu';
 import DesktopGrid from '../components/DesktopGrid';
 import Wallpaper from '../components/Wallpaper';
+import HomeFolder from '../components/HomeFolder';
+import { useHomeScreenStore } from '../state/slices/homeScreenSlice';
+import { Grid as GridIcon } from 'lucide-react';
 import { AIWidget, PriorityCard, AISyncCard, PulseChart, TimeWidget } from '../components/Widgets';
 import { WindowManager, WindowInstance } from '../engine/UnivaRuntime';
 import DocsEngine from '../apps/OfficeApp/engines/DocsEngine';
@@ -49,6 +52,7 @@ const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { isMobile } = useResponsive();
   const { recentlyOpened, trackRecentApp } = useAppsStore();
+  const { folders, gridItems } = useHomeScreenStore();
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [startVisible, setStartVisible] = useState(false);
   const [windows, setWindows] = useState<WindowInstance[]>([]);
@@ -162,34 +166,49 @@ const HomeScreen: React.FC = () => {
            </View>
         </View>
 
-        {/* ── Recently Opened Apps ──────────────────────────────────── */}
-        <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>RECENTLY OPENED</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentScroll}>
-            {recentlyOpened.map((entry: RecentEntry) => {
-              const info = APP_INFO[entry.pkg];
-              if (!info) return null;
-              const AppIconComp = info.Icon;
-              return (
-                <TouchableOpacity key={entry.pkg} style={styles.recentCard} onPress={() => handleAppPress(entry.pkg)} activeOpacity={0.75}>
-                  <View style={[styles.recentIconWrap, { backgroundColor: info.color + '22', borderColor: info.color + '55' }]}>
-                    <AppIconComp size={30} color={info.color} />
+        {/* ── Priority Shelf (Mobile Only) ── */}
+        {isMobile && recentlyOpened.length > 0 && (
+          <View style={styles.mobilePrioritySection}>
+            <Text style={styles.sectionTitle}>PRIORITY ACCESS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.priorityScroll}>
+              {recentlyOpened.slice(0, 5).map((recent) => (
+                <TouchableOpacity key={recent.pkg} style={styles.priorityItem} onPress={() => handleAppPress(recent.pkg)}>
+                  <View style={[styles.priorityIcon, { backgroundColor: theme.primary + '33' }]}>
+                    <GridIcon size={20} color={theme.primary} />
                   </View>
-                  <Text style={styles.recentName} numberOfLines={1}>{info.name}</Text>
-                  <Text style={styles.recentTime}>{relTime(entry.ts)}</Text>
+                  <Text style={styles.priorityLabel}>{recent.pkg.split('.').pop()}</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+              ))}
+            </ScrollView>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          </View>
+        )}
 
-        {/* ── All Apps Grid ─────────────────────────────────────────── */}
+        {/* ── Main Dynamic Workspace (Apps & Folders) ── */}
         <View style={styles.appSection}>
-            <Text style={styles.sectionTitle}>FREQUENTLY USED</Text>
-            <DesktopGrid apps={apps} onAppPress={handleAppPress} />
+          <Text style={styles.sectionTitle}>WORKSPACE</Text>
+          <View style={[styles.mainGrid, isMobile && styles.mobileGridAdjustment]}>
+            {gridItems.map((item) => {
+              if (item.type === 'FOLDER') {
+                const folder = folders.find(f => f.id === item.target);
+                if (!folder) return null;
+                return <HomeFolder key={item.id} folder={folder} onAppPress={handleAppPress} />;
+              } else if (item.type === 'APP') {
+                return (
+                  <TouchableOpacity key={item.id} style={styles.desktopIcon} onPress={() => handleAppPress(item.target)}>
+                    <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }]}>
+                      <GridIcon size={24} color={theme.primary} />
+                    </View>
+                    <Text style={styles.iconLabel}>{item.target.split('.').pop()}</Text>
+                  </TouchableOpacity>
+                );
+              }
+              return null;
+            })}
+          </View>
         </View>
 
-        <View style={{ height: 300 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Taskbar Fixed at BOTTOM (No Negotiation) */}
@@ -285,52 +304,72 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
   cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 12 },
-  recentSection: {
-    marginTop: 60,
+  appSection: {
+    marginTop: 40,
   },
-  sectionTitle: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 2,
-    marginBottom: 20,
+  mobilePrioritySection: {
+    marginTop: 30,
+    marginBottom: 10,
   },
-  recentScroll: {
+  priorityScroll: {
     gap: 16,
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
-  recentCard: {
-    width: 110,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+  priorityItem: {
     alignItems: 'center',
+    width: 64,
     gap: 8,
   },
-  recentIconWrap: {
+  priorityIcon: {
     width: 52,
     height: 52,
     borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  priorityLabel: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    opacity: 0.8,
+  },
+  divider: {
+    height: 1,
+    marginTop: 20,
+    marginBottom: 10,
+    opacity: 0.1,
+  },
+  mainGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 20,
+    justifyContent: 'flex-start',
+  },
+  mobileGridAdjustment: {
+    justifyContent: 'center',
+  },
+  desktopIcon: {
+    width: 80,
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  iconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
   },
-  recentName: {
+  iconLabel: {
     color: '#E2E8F0',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  recentTime: {
-    color: '#64748B',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  appSection: {
-    marginTop: 60,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: {width: 0, height: 1},
+    textShadowRadius: 2,
   },
   windowLayer: { ...StyleSheet.absoluteFillObject, zIndex: 5000 },
   startLayer: { ...StyleSheet.absoluteFillObject, zIndex: 6000 },

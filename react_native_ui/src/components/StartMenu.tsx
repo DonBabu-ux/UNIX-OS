@@ -12,6 +12,8 @@ import SystemControlPanel from './StartMenu/SystemControlPanel';
 import RecentsPanel from './StartMenu/RecentsPanel';
 import AppGrid from './StartMenu/AppGrid';
 import { useSystemStore } from '../state/slices/systemSlice';
+import { useAppsStore } from '../state/slices/appsSlice';
+import { useResponsive } from '../state/ResponsiveManager';
 
 const RECENT_OPENED = [
   { id: '1', name: 'AI Architecture Overview.unv_docx', time: 'Opened 1h ago', icon: FileText, color: '#3B82F6' },
@@ -33,7 +35,8 @@ interface StartMenuProps {
 const StartMenu: React.FC<StartMenuProps> = React.memo(({ visible, recentApps, onAppPress }) => {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = React.useState('');
-
+  const { isMobile } = useResponsive();
+  const { recentlyOpened } = useAppsStore();
   const { isAdminAuthenticated, openModal } = useSystemStore();
 
   const handleAdminPress = () => {
@@ -49,6 +52,11 @@ const StartMenu: React.FC<StartMenuProps> = React.memo(({ visible, recentApps, o
   const filteredApps = recentApps.filter(app => 
     app.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Get top 4 frequently used apps for the mobile shelf
+  const frequentPackages = recentlyOpened.slice(0, 4).map(e => e.pkg);
+  const frequentAppsList = recentApps.filter(app => frequentPackages.includes(app.packageName));
+
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
@@ -76,15 +84,28 @@ const StartMenu: React.FC<StartMenuProps> = React.memo(({ visible, recentApps, o
         
         {/* Layer 3: Independent Scrollable Content */}
         <ScrollView style={styles.contentBody} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+           {isMobile && frequentAppsList.length > 0 && (
+             <View style={styles.frequentSection}>
+               <Text style={[styles.sectionTitle, {color: theme.accent}]}>PRIORITY ACCESS</Text>
+               <AppGrid 
+                 apps={frequentAppsList}
+                 onAppPress={onAppPress}
+               />
+               <View style={[styles.divider, {backgroundColor: theme.border}]} />
+             </View>
+           )}
+
            <AppGrid 
              apps={filteredApps}
              onAppPress={onAppPress}
            />
            
-           <RecentsPanel 
-             items={RECENT_OPENED} 
-             onItemPress={(id) => console.log('Rec item press:', id)}
-           />
+           {!isMobile && (
+             <RecentsPanel 
+               items={RECENT_OPENED} 
+               onItemPress={(id) => console.log('Rec item press:', id)}
+             />
+           )}
         </ScrollView>
 
         {/* Layer 4: System Control Panel (Fixed at Bottom) */}
@@ -112,8 +133,8 @@ const styles = StyleSheet.create({
     width: 620,
     maxWidth: '98%',
     height: 680,
-    maxHeight: SCREEN_HEIGHT - 120, // Leave room for taskbar and padding
-    borderRadius: 16,
+    maxHeight: Platform.OS === 'web' ? (SCREEN_HEIGHT < 800 ? SCREEN_HEIGHT - 100 : 680) : (SCREEN_HEIGHT - 120),
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     overflow: 'hidden',
@@ -154,6 +175,24 @@ const styles = StyleSheet.create({
   },
   contentBody: {
     flex: 1,
+  },
+  frequentSection: {
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginLeft: 24,
+    marginBottom: 10,
+    opacity: 0.8,
+  },
+  divider: {
+    height: 1,
+    marginHorizontal: 24,
+    marginVertical: 10,
+    opacity: 0.2,
   },
   scrollContent: {
     paddingBottom: 20,
