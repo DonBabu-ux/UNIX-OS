@@ -37,6 +37,7 @@ import {
 import { useTheme } from '../../theme/themeProvider';
 import { aiService, ChatMessage } from '../../services/aiService';
 import { useUserStore } from '../../state/slices/userSlice';
+import { useResponsive } from '../../state/ResponsiveManager';
 
 const { width: W } = Dimensions.get('window');
 
@@ -400,6 +401,7 @@ const AddTaskModal: React.FC<{
 // ─── Main TaskManager ─────────────────────────────────────────────────────────────
 const TaskManager: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const theme = useTheme();
+  const { isMobile } = useResponsive();
   const { isAuthenticated, username, setLogin } = useUserStore();
 
   const [tasks, setTasks] = React.useState<Task[]>([
@@ -447,7 +449,7 @@ const TaskManager: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             {isAuthenticated ? `Hello, ${username} 👋` : 'Task Manager'}
           </Text>
           <Text style={[styles.subtitle, { color: theme.text }]}>
-            {pendingCount} pending · {doneCount} done
+            {pendingCount} tasks remaining
           </Text>
         </View>
         <View style={styles.headerActions}>
@@ -482,18 +484,18 @@ const TaskManager: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       </View>
 
       {/* ── Stats row ── */}
-      <Animated.View entering={FadeInUp.delay(100)} style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: '#FF444420', borderColor: '#FF444440' }]}>
+      <Animated.View entering={FadeInUp.delay(100)} style={[styles.statsRow, isMobile && styles.mobileStatsRow]}>
+        <View style={[styles.statCard, { backgroundColor: '#FF444415', borderColor: '#FF444430' }]}>
           <Text style={[styles.statNum, { color: '#FF4444' }]}>{tasks.filter(t => t.priority === 'high' && t.status === 'pending').length}</Text>
-          <Text style={[styles.statLabel, { color: '#FF4444' }]}>High Priority</Text>
+          <Text style={[styles.statLabel, { color: '#FF4444' }]}>HIGH</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+        <View style={[styles.statCard, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '20' }]}>
           <Text style={[styles.statNum, { color: theme.primary }]}>{pendingCount}</Text>
-          <Text style={[styles.statLabel, { color: theme.primary }]}>In Progress</Text>
+          <Text style={[styles.statLabel, { color: theme.primary }]}>ACTIVE</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: '#10B98120', borderColor: '#10B98140' }]}>
+        <View style={[styles.statCard, { backgroundColor: '#10B98115', borderColor: '#10B98125' }]}>
           <Text style={[styles.statNum, { color: '#10B981' }]}>{doneCount}</Text>
-          <Text style={[styles.statLabel, { color: '#10B981' }]}>Completed</Text>
+          <Text style={[styles.statLabel, { color: '#10B981' }]}>DONE</Text>
         </View>
       </Animated.View>
 
@@ -515,7 +517,7 @@ const TaskManager: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         contentContainerStyle={styles.taskListContent}>
 
         {pending.length > 0 && (
-          <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>ACTIVE</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>IN PROGRESS</Text>
         )}
         {pending.map((task, idx) => (
           <Animated.View key={task.id} entering={FadeInUp.delay(idx * 60)}>
@@ -559,12 +561,14 @@ const TaskManager: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <Plus size={24} color="#fff" />
       </TouchableOpacity>
 
-      {/* ── Mobile Bottom Nav (MASTER PROMPT REQUIREMENT) ── */}
-      <View style={[styles.bottomNav, { backgroundColor: theme.surfaceDark, borderTopColor: theme.border }]}>
-        <TouchableOpacity style={styles.navItem}><Clock size={20} color={theme.primary} /><Text style={[styles.navText, { color: theme.primary }]}>Tasks</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => openAI()}><Sparkles size={20} color={theme.textSecondary} /><Text style={[styles.navText, { color: theme.textSecondary }]}>AI Chat</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => !isAuthenticated ? setShowAuth(true) : null}><User size={20} color={theme.textSecondary} /><Text style={[styles.navText, { color: theme.textSecondary }]}>Profile</Text></TouchableOpacity>
-      </View>
+      {/* ── Mobile Bottom Nav ── */}
+      {Platform.OS !== 'web' && Dimensions.get('window').width < 600 && (
+        <View style={[styles.bottomNav, { backgroundColor: theme.surfaceDark, borderTopColor: theme.border }]}>
+          <TouchableOpacity style={styles.navItem}><Clock size={20} color={theme.primary} /><Text style={[styles.navText, { color: theme.primary }]}>Tasks</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => openAI()}><Sparkles size={20} color={theme.textSecondary} /><Text style={[styles.navText, { color: theme.textSecondary }]}>AI Chat</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => !isAuthenticated ? setShowAuth(true) : null}><User size={20} color={theme.textSecondary} /><Text style={[styles.navText, { color: theme.textSecondary }]}>Profile</Text></TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Modals ── */}
       <AddTaskModal
@@ -599,6 +603,8 @@ const TaskCard: React.FC<{
 }> = ({ task, theme, onToggle, onDelete, onAI }) => {
   const isDone = task.status === 'done';
   const pColor = PRIORITY_COLORS[task.priority];
+  const screenWidth = Dimensions.get('window').width;
+  const isCompact = screenWidth < 500;
 
   return (
     <View style={[cardStyles.card, { backgroundColor: theme.surfaceDark, borderColor: theme.border },
@@ -637,37 +643,31 @@ const TaskCard: React.FC<{
           </TouchableOpacity>
         </View>
 
-        {/* 🧠 SMART AI ACTIONS — Primary Feature */}
+        {/* 🧠 SMART AI ACTIONS — Unified Row */}
         <View style={cardStyles.aiActionGrid}>
           <TouchableOpacity onPress={() => onAI('summarize')} style={[cardStyles.aiPill, { borderColor: '#10B98130' }]}>
             <Zap size={10} color="#10B981" />
-            <Text style={[cardStyles.aiPillText, { color: '#10B981' }]}>Summarize</Text>
+            <Text style={[cardStyles.aiPillText, { color: '#10B981' }]}>AI Summary</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity onPress={() => onAI('multiTaskAnalyze')} style={[cardStyles.aiPill, { borderColor: '#8B5CF630', backgroundColor: '#8B5CF610' }]}>
+          <TouchableOpacity onPress={() => onAI('multiTaskAnalyze')} style={[cardStyles.aiPill, { borderColor: '#8B5CF630', backgroundColor: '#8B5CF608' }]}>
             <Sparkles size={10} color="#8B5CF6" />
-            <Text style={[cardStyles.aiPillText, { color: '#8B5CF6' }]}>Deep Analyze</Text>
+            <Text style={[cardStyles.aiPillText, { color: '#8B5CF6' }]}>Analyze</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => onAI('improve')} style={[cardStyles.aiPill, { borderColor: '#3B82F630' }]}>
-            <PenLine size={10} color="#3B82F6" />
-            <Text style={[cardStyles.aiPillText, { color: '#3B82F6' }]}>Improve</Text>
-          </TouchableOpacity>
+          {!isCompact && (
+             <>
+                <TouchableOpacity onPress={() => onAI('improve')} style={[cardStyles.aiPill, { borderColor: '#3B82F630' }]}>
+                  <PenLine size={10} color="#3B82F6" />
+                  <Text style={[cardStyles.aiPillText, { color: '#3B82F6' }]}>Improve</Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => onAI('breakDown')} style={[cardStyles.aiPill, { borderColor: '#F59E0B30' }]}>
-            <ChevronDown size={10} color="#F59E0B" />
-            <Text style={[cardStyles.aiPillText, { color: '#F59E0B' }]}>Break Down</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => onAI('research')} style={[cardStyles.aiPill, { borderColor: '#06B6D430' }]}>
-            <Globe size={10} color="#06B6D4" />
-            <Text style={[cardStyles.aiPillText, { color: '#06B6D4' }]}>Research</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => onAI('humanize')} style={[cardStyles.aiPill, { borderColor: '#EC489930' }]}>
-            <Smile size={10} color="#EC4899" />
-            <Text style={[cardStyles.aiPillText, { color: '#EC4899' }]}>Humanize</Text>
-          </TouchableOpacity>
+                <TouchableOpacity onPress={() => onAI('breakDown')} style={[cardStyles.aiPill, { borderColor: '#F59E0B30' }]}>
+                  <ChevronDown size={10} color="#F59E0B" />
+                  <Text style={[cardStyles.aiPillText, { color: '#F59E0B' }]}>Break Down</Text>
+                </TouchableOpacity>
+             </>
+          )}
         </View>
       </View>
     </View>
@@ -708,11 +708,15 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginTop: 16,
   },
-  statCard: {
-    flex: 1, borderRadius: 12, padding: 14, borderWidth: 1, alignItems: 'center',
+  mobileStatsRow: {
+    paddingHorizontal: 12,
   },
-  statNum: { fontSize: 24, fontWeight: '800', letterSpacing: -1 },
-  statLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginTop: 2 },
+  statCard: {
+    flex: 1, borderRadius: 12, padding: 12, borderWidth: 1, alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statNum: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+  statLabel: { fontSize: 8, fontWeight: '800', letterSpacing: 1, marginTop: 4 },
   categoryScroll: { marginTop: 16, flexGrow: 0 },
   categoryContent: { paddingHorizontal: 20, gap: 8 },
   catChip: {

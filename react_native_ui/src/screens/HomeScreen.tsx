@@ -74,6 +74,16 @@ const HomeScreen: React.FC = () => {
   };
   const closeWindow = (id: string) => setWindows(windows.filter(w => w.id !== id));
   const moveWindow = (id: string, x: number, y: number) => setWindows(windows.map(w => w.id === id ? { ...w, x, y } : w));
+  
+  const minimizeWindow = (id: string) => {
+    // For now, toggle visibility or just close if taskbar restore isn't ready
+    // Let's implement active state toggle
+    setWindows(windows.map(w => w.id === id ? { ...w, isMinimized: true } : w));
+  };
+
+  const maximizeWindow = (id: string) => {
+    setWindows(windows.map(w => w.id === id ? { ...w, isMaximized: !w.isMaximized } : w));
+  };
 
   useEffect(() => { loadApps(); }, []);
   const loadApps = async () => { setApps(await getInstalledApps()); };
@@ -175,7 +185,14 @@ const HomeScreen: React.FC = () => {
       </View>
 
       <View style={styles.windowLayer} pointerEvents="box-none">
-        <WindowManager windows={windows} onFocus={focusWindow} onClose={closeWindow} onMove={moveWindow} renderContent={(win) => {
+        <WindowManager 
+          windows={windows.filter(w => !w.isMinimized)} 
+          onFocus={focusWindow} 
+          onClose={closeWindow} 
+          onMinimize={minimizeWindow}
+          onMaximize={maximizeWindow}
+          onMove={moveWindow} 
+          renderContent={(win) => {
             if (win.type === 'doc') return <DocsEngine />;
             if (win.type === 'tasks') return <TaskManager onClose={() => closeWindow(win.id)} />;
             if (win.type === 'sheet') return <OfficeApp appType="excel" onClose={() => closeWindow(win.id)} />;

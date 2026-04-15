@@ -13,6 +13,7 @@ export type WindowInstance = {
   height: number;
   zIndex: number;
   isFocused: boolean;
+  isMaximized?: boolean;
 };
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -25,9 +26,11 @@ export const WindowManager: React.FC<{
   windows: WindowInstance[], 
   onFocus: (id: string) => void,
   onClose: (id: string) => void,
+  onMinimize: (id: string) => void,
+  onMaximize: (id: string) => void,
   onMove: (id: string, x: number, y: number) => void,
   renderContent: (win: WindowInstance) => React.ReactNode
-}> = ({ windows, onFocus, onClose, onMove, renderContent }) => {
+}> = ({ windows, onFocus, onClose, onMinimize, onMaximize, onMove, renderContent }) => {
   const theme = useTheme();
 
   const renderWindow = (win: WindowInstance) => {
@@ -47,13 +50,14 @@ export const WindowManager: React.FC<{
         style={[
           styles.window, 
           { 
-            left: win.x, 
-            top: win.y, 
-            width: win.width, 
-            height: win.height, 
+            left: win.isMaximized ? 0 : win.x, 
+            top: win.isMaximized ? 0 : win.y, 
+            width: win.isMaximized ? SCREEN_WIDTH : win.width, 
+            height: win.isMaximized ? SCREEN_HEIGHT - 60 : win.height, 
             zIndex: win.zIndex,
             backgroundColor: win.isFocused ? 'rgba(28, 36, 52, 0.95)' : 'rgba(20, 25, 35, 0.85)',
             borderColor: win.isFocused ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
+            borderRadius: win.isMaximized ? 0 : 8,
           }
         ]}
       >
@@ -67,10 +71,10 @@ export const WindowManager: React.FC<{
            </View>
            
            <View style={styles.windowControls}>
-              <TouchableOpacity style={styles.controlBtn}>
+              <TouchableOpacity onPress={() => onMinimize(win.id)} style={styles.controlBtn}>
                  <Minus size={14} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.controlBtn}>
+              <TouchableOpacity onPress={() => onMaximize(win.id)} style={styles.controlBtn}>
                  <Square size={12} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => onClose(win.id)} style={[styles.controlBtn, styles.closeBtn]}>
@@ -89,7 +93,7 @@ export const WindowManager: React.FC<{
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {windows.sort((a, b) => a.zIndex - b.zIndex).map(renderWindow)}
+      {[...windows].sort((a, b) => a.zIndex - b.zIndex).map(renderWindow)}
     </View>
   );
 };
