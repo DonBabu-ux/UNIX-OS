@@ -11,6 +11,7 @@ import {
 import SystemControlPanel from './StartMenu/SystemControlPanel';
 import RecentsPanel from './StartMenu/RecentsPanel';
 import AppGrid from './StartMenu/AppGrid';
+import { useSystemStore } from '../state/slices/systemSlice';
 
 const RECENT_OPENED = [
   { id: '1', name: 'AI Architecture Overview.unv_docx', time: 'Opened 1h ago', icon: FileText, color: '#3B82F6' },
@@ -32,6 +33,16 @@ interface StartMenuProps {
 const StartMenu: React.FC<StartMenuProps> = React.memo(({ visible, recentApps, onAppPress }) => {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = React.useState('');
+
+  const { isAdminAuthenticated, openModal } = useSystemStore();
+
+  const handleAdminPress = () => {
+    if (isAdminAuthenticated) {
+      openModal({ type: 'ADMIN_CONTROL', title: 'ADMINISTRATOR CENTER' });
+    } else {
+      openModal({ type: 'ADMIN_AUTH', title: 'SYSTEM SECURITY GATE' });
+    }
+  };
 
   if (!visible) return null;
 
@@ -81,6 +92,7 @@ const StartMenu: React.FC<StartMenuProps> = React.memo(({ visible, recentApps, o
           userName="Administrator"
           onLogoutPress={() => console.log('Logout')}
           onSettingsPress={() => console.log('Settings')}
+          onAdminPress={handleAdminPress}
         />
 
       </Animated.View>

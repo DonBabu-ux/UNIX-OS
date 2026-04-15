@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensi
 import {
   Shield, Zap,
   FileText, BarChart2, Presentation, CheckSquare,
-  Sparkles, Folder, Globe, Settings,
+  Sparkles, Folder, Globe, Settings, Lock,
 } from 'lucide-react';
 import { getInstalledApps, AppInfo } from '../../bridge_layer/AppListBridge';
 import { launchApp } from '../../bridge_layer/AppLauncherBridge';
@@ -22,6 +22,7 @@ import TaskManager from '../apps/TaskManager/TaskManager';
 import { useTheme } from '../theme/themeProvider';
 import { useAppsStore, RecentEntry } from '../state/slices/appsSlice';
 import { useResponsive } from '../state/ResponsiveManager';
+import { useSystemStore } from '../state/slices/systemSlice';
 
 const APP_INFO: Record<string, { name: string; color: string; Icon: React.ElementType }> = {
   'internal.word':        { name: 'Univa Docs',     color: '#0078D4', Icon: FileText },
@@ -102,6 +103,16 @@ const HomeScreen: React.FC = () => {
 
   const handleStartPress = useCallback(() => { setStartVisible(prev => !prev); }, []);
 
+  const { isAdminAuthenticated, openModal } = useSystemStore();
+
+  const handleAdminPress = () => {
+    if (isAdminAuthenticated) {
+      openModal({ type: 'ADMIN_CONTROL', title: 'ADMINISTRATOR CENTER' });
+    } else {
+      openModal({ type: 'ADMIN_AUTH', title: 'SYSTEM SECURITY GATE' });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -117,6 +128,8 @@ const HomeScreen: React.FC = () => {
       >
         {/* Modular Header Widgets */}
         <View style={styles.widgetsGrid}>
+           {isMobile && <TimeWidget isHacker={true} />}
+
            <View style={[styles.row, isMobile && styles.mobileColumn]}>
               <View style={[styles.statusCard, theme.glassEffect]}>
                  <View style={[styles.glassBadge, { borderColor: theme.success + '44' }]}>
@@ -138,7 +151,7 @@ const HomeScreen: React.FC = () => {
 
            <View style={[styles.row, isMobile && styles.mobileColumn]}>
               <PriorityCard />
-              <TimeWidget />
+              {!isMobile && <TimeWidget />}
            </View>
 
            {!isMobile && <PulseChart />}

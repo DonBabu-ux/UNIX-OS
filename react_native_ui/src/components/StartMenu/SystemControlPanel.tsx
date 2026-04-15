@@ -7,12 +7,14 @@ interface SystemControlPanelProps {
   userName: string;
   onLogoutPress?: () => void;
   onSettingsPress?: () => void;
+  onAdminPress?: () => void;
 }
 
 const SystemControlPanel: React.FC<SystemControlPanelProps> = ({ 
   userName = "Administrator",
   onLogoutPress,
-  onSettingsPress 
+  onSettingsPress,
+  onAdminPress
 }) => {
   const theme = useTheme();
 
@@ -21,6 +23,7 @@ const SystemControlPanel: React.FC<SystemControlPanelProps> = ({
       <TouchableOpacity 
         style={styles.userInfo} 
         activeOpacity={0.6}
+        onPress={onAdminPress}
       >
         <View style={styles.userAvatar}>
           <User size={18} color="rgba(255, 255, 255, 0.9)" />

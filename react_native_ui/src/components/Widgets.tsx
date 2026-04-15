@@ -87,9 +87,10 @@ export const AISyncCard: React.FC<{ title: string; category: string; icon: strin
   );
 };
 
-export const TimeWidget: React.FC = () => {
+export const TimeWidget: React.FC<{ isHacker?: boolean }> = ({ isHacker }) => {
   const theme = useTheme();
   const [time, setTime] = React.useState(new Date());
+  const hackerGreen = '#00FF41';
 
   React.useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -97,10 +98,23 @@ export const TimeWidget: React.FC = () => {
   }, []);
 
   return (
-    <Animated.View entering={FadeInUp.delay(500)} style={[styles.card, theme.glassEffect, styles.timeWidget]}>
-      <GlassIcon Icon={Clock} color={theme.textSecondary} size={20} />
-      <Text style={[styles.bigTime, { color: theme.text }]}>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-      <Text style={styles.dateText}>{time.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</Text>
+    <Animated.View 
+      entering={FadeInUp.delay(500)} 
+      style={[
+        styles.card, 
+        theme.glassEffect, 
+        styles.timeWidget,
+        isHacker && { borderColor: hackerGreen + '44', backgroundColor: 'rgba(0,0,0,0.6)' }
+      ]}
+    >
+      <GlassIcon Icon={Clock} color={isHacker ? hackerGreen : theme.textSecondary} size={20} />
+      <Text style={[styles.bigTime, { color: isHacker ? hackerGreen : theme.text }]}>
+        {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+      <Text style={[styles.dateText, isHacker && { color: hackerGreen + 'AA' }]}>
+        {time.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+      </Text>
+      {isHacker && <View style={[styles.hackerGlow, { backgroundColor: hackerGreen }]} />}
     </Animated.View>
   );
 };
@@ -224,5 +238,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
     borderWidth: 1,
+  },
+  hackerGlow: {
+    position: 'absolute',
+    bottom: -2,
+    left: '10%',
+    width: '80%',
+    height: 1,
+    opacity: 0.6,
+    //@ts-ignore
+    boxShadow: '0 0 20px #00FF41, 0 0 40px #00FF41',
   },
 });

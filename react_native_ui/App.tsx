@@ -7,6 +7,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/themeProvider';
 import { ResponsiveProvider } from './src/state/ResponsiveManager';
 import { FloatingAIAssistant } from './src/components/FloatingAIAssistant';
+import SystemModalManager from './src/components/SystemModalManager';
 
 const App = () => {
   useEffect(() => {
@@ -20,6 +21,7 @@ const App = () => {
           <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#0B0F17" translucent />
             <RootNavigator />
+            <SystemModalManager />
             <FloatingAIAssistant />
             {Platform.OS === 'web' && (
               <View style={styles.webDebug}>
