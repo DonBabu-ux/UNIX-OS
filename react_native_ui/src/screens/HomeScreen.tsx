@@ -1,11 +1,11 @@
-// UNIVA OS - HomeScreen - Version 1.1 (Fixed Tags & Verified Imports)
+// UNIVA OS - HomeScreen - Version 1.7 (Restored Bottom Taskbar)
 import * as React from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import {
-  Cloud, Shield, Zap,
+  Shield, Zap,
   FileText, BarChart2, Presentation, CheckSquare,
-  Sparkles, Folder, Globe, Settings, Package,
+  Sparkles, Folder, Globe, Settings,
 } from 'lucide-react';
 import { getInstalledApps, AppInfo } from '../../bridge_layer/AppListBridge';
 import { launchApp } from '../../bridge_layer/AppLauncherBridge';
@@ -23,7 +23,6 @@ import { useTheme } from '../theme/themeProvider';
 import { useAppsStore, RecentEntry } from '../state/slices/appsSlice';
 import { useResponsive } from '../state/ResponsiveManager';
 
-// ── App metadata map ────────────────────────────────────────────────────────
 const APP_INFO: Record<string, { name: string; color: string; Icon: React.ElementType }> = {
   'internal.word':        { name: 'Univa Docs',     color: '#0078D4', Icon: FileText },
   'internal.excel':       { name: 'Univa Sheets',   color: '#107C10', Icon: BarChart2 },
@@ -35,7 +34,6 @@ const APP_INFO: Record<string, { name: string; color: string; Icon: React.Elemen
   'internal.settings':    { name: 'Settings',       color: '#64748B', Icon: Settings },
 };
 
-// ── Relative time helper ─────────────────────────────────────────────────────
 function relTime(ts: number): string {
   const diff = Date.now() - ts;
   if (diff < 60_000)        return 'Just now';
@@ -53,14 +51,12 @@ const HomeScreen: React.FC = () => {
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [startVisible, setStartVisible] = useState(false);
   const [windows, setWindows] = useState<WindowInstance[]>([]);
-  const [zCounter, setZCounter] = useState(10);
+  const [zCounter, setZCounter] = useState(100);
 
   const openAppWindow = (type: string, title: string) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newWindow: WindowInstance = {
-      id,
-      title,
-      type,
+      id, title, type,
       x: isMobile ? 10 : 150 + (windows.length * 30),
       y: isMobile ? 50 : 100 + (windows.length * 30),
       width: isMobile ? Dimensions.get('window').width - 20 : 900,
@@ -73,29 +69,14 @@ const HomeScreen: React.FC = () => {
   };
 
   const focusWindow = (id: string) => {
-    setWindows(windows.map(w => w.id === id 
-      ? { ...w, isFocused: true, zIndex: zCounter } 
-      : { ...w, isFocused: false }
-    ));
+    setWindows(windows.map(w => w.id === id ? { ...w, isFocused: true, zIndex: zCounter } : { ...w, isFocused: false }));
     setZCounter(zCounter + 1);
   };
+  const closeWindow = (id: string) => setWindows(windows.filter(w => w.id !== id));
+  const moveWindow = (id: string, x: number, y: number) => setWindows(windows.map(w => w.id === id ? { ...w, x, y } : w));
 
-  const closeWindow = (id: string) => {
-    setWindows(windows.filter(w => w.id !== id));
-  };
-
-  const moveWindow = (id: string, x: number, y: number) => {
-    setWindows(windows.map(w => w.id === id ? { ...w, x, y } : w));
-  };
-
-  useEffect(() => {
-    loadApps();
-  }, []);
-
-  const loadApps = async () => {
-    const appList = await getInstalledApps();
-    setApps(appList);
-  };
+  useEffect(() => { loadApps(); }, []);
+  const loadApps = async () => { setApps(await getInstalledApps()); };
 
   const handleAppPress = useCallback((pkg: string) => {
     setStartVisible(false);
@@ -109,98 +90,65 @@ const HomeScreen: React.FC = () => {
     else launchApp(pkg);
   }, [windows, zCounter, trackRecentApp, isMobile]);
 
-  const handleStartPress = useCallback(() => {
-    setStartVisible(prev => !prev);
-  }, []);
+  const handleStartPress = useCallback(() => { setStartVisible(prev => !prev); }, []);
 
   return (
     <View style={styles.container}>
-      <View pointerEvents="none" style={{ ...StyleSheet.absoluteFillObject, zIndex: 0 }}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <Wallpaper />
       </View>
-      <ScrollView 
-        style={[styles.scrollView, { zIndex: 1 }]} 
-        contentContainerStyle={[styles.workspace, isMobile && styles.mobileWorkspace]} 
-        showsVerticalScrollIndicator={true}
-        bounces={true}
-        scrollEnabled={true}
-      >
-        
-        {/* Header Section */}
-        <View style={[styles.header, isMobile && styles.mobileHeader]}>
-          <View>
-            <Text style={[styles.greeting, isMobile && styles.mobileGreeting]}>Systems Operational</Text>
-            <View style={styles.statusRow}>
-               <View style={[styles.glassBadge, { borderColor: theme.success + '44' }]}>
-                 <Shield size={10} color={theme.success} />
-                 <Text style={[styles.statusText, { color: theme.success }]}>Security: Optimal</Text>
-               </View>
-               {!isMobile && (
-                 <>
-                   <View style={[styles.glassBadge, { borderColor: theme.accent + '44' }]}>
-                     <Zap size={10} color={theme.accent} />
-                     <Text style={[styles.statusText, { color: theme.accent }]}>Neural: 98%</Text>
-                   </View>
-                 </>
-               )}
-            </View>
-          </View>
-          {!isMobile && (
-            <View style={[styles.cloudBadge, theme.glassEffect]}>
-              <Cloud size={14} color={theme.primary} style={{ marginRight: 8 }} />
-              <Text style={[styles.cloudText, { color: theme.primary }]}>Cloud: Connected</Text>
-            </View>
-          )}
-        </View>
 
-        {/* Widgets Panel */}
-        <View style={[styles.widgetsLayout, isMobile && styles.mobileWidgetsLayout]}>
-           <View style={{ flex: isMobile ? 0 : 2, gap: 20 }}>
-              <AIWidget />
-              <View style={[styles.row, isMobile && styles.mobileColumn]}>
-                 <PriorityCard />
-                 <TimeWidget />
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={[styles.workspace, isMobile && styles.mobileWorkspace]}
+        showsVerticalScrollIndicator={true}
+        scrollEventThrottle={16}
+        decelerationRate="normal"
+      >
+        {/* Modular Header Widgets */}
+        <View style={styles.widgetsGrid}>
+           <View style={[styles.row, isMobile && styles.mobileColumn]}>
+              <View style={[styles.statusCard, theme.glassEffect]}>
+                 <View style={[styles.glassBadge, { borderColor: theme.success + '44' }]}>
+                   <Shield size={10} color={theme.success} />
+                   <Text style={[styles.statusText, { color: theme.success }]}>Security: Optimal</Text>
+                 </View>
+                 <Text style={styles.cardTitle}>Systems Operational</Text>
+              </View>
+              <View style={[styles.statusCard, theme.glassEffect]}>
+                 <View style={[styles.glassBadge, { borderColor: theme.accent + '44' }]}>
+                   <Zap size={10} color={theme.accent} />
+                   <Text style={[styles.statusText, { color: theme.accent }]}>Neural Engine: 98%</Text>
+                 </View>
+                 <Text style={styles.cardTitle}>Cloud Engine Active</Text>
               </View>
            </View>
-           <View style={{ flex: 1 }}>
-              {!isMobile && <PulseChart />}
+
+           <AIWidget />
+
+           <View style={[styles.row, isMobile && styles.mobileColumn]}>
+              <PriorityCard />
+              <TimeWidget />
+           </View>
+
+           {!isMobile && <PulseChart />}
+
+           <View style={[styles.row, isMobile && styles.mobileColumn]}>
+              <AISyncCard title="Update Core Kernel" category="System" icon="🛠️" />
+              <AISyncCard title="Network Sync" category="Cloud" icon="📡" />
            </View>
         </View>
 
-        {!isMobile && (
-          <View style={[styles.row, isMobile && styles.mobileColumn]}>
-            <AISyncCard 
-              title="Update Core Kernel"
-              category="System"
-              icon="🛠️"
-            />
-            <AISyncCard 
-              title="Meeting with Design Team"
-              category="Social"
-              icon="👥"
-            />
-          </View>
-        )}
-
-        {/* ── Recently Opened ─────────────────────────────────────── */}
+        {/* ── Recently Opened Apps ──────────────────────────────────── */}
         <View style={styles.recentSection}>
           <Text style={styles.sectionTitle}>RECENTLY OPENED</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recentScroll}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentScroll}>
             {recentlyOpened.map((entry: RecentEntry) => {
               const info = APP_INFO[entry.pkg];
               if (!info) return null;
               const AppIconComp = info.Icon;
               return (
-                <TouchableOpacity
-                  key={entry.pkg}
-                  style={styles.recentCard}
-                  onPress={() => handleAppPress(entry.pkg)}
-                  activeOpacity={0.75}
-                >
+                <TouchableOpacity key={entry.pkg} style={styles.recentCard} onPress={() => handleAppPress(entry.pkg)} activeOpacity={0.75}>
                   <View style={[styles.recentIconWrap, { backgroundColor: info.color + '22', borderColor: info.color + '55' }]}>
                     <AppIconComp size={30} color={info.color} />
                   </View>
@@ -212,52 +160,36 @@ const HomeScreen: React.FC = () => {
           </ScrollView>
         </View>
 
+        {/* ── All Apps Grid ─────────────────────────────────────────── */}
         <View style={styles.appSection}>
             <Text style={styles.sectionTitle}>FREQUENTLY USED</Text>
-            <DesktopGrid 
-            apps={apps} 
-            onAppPress={handleAppPress} 
-            />
+            <DesktopGrid apps={apps} onAppPress={handleAppPress} />
         </View>
-        <View style={{ height: 400 }} />
+
+        <View style={{ height: 300 }} />
       </ScrollView>
 
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }} pointerEvents="box-none">
-        <WindowManager 
-          windows={windows}
-          onFocus={focusWindow}
-          onClose={closeWindow}
-          onMove={moveWindow}
-          renderContent={(win) => {
+      {/* Taskbar Fixed at BOTTOM (No Negotiation) */}
+      <View style={styles.taskbarFixed} pointerEvents="box-none">
+        <Taskbar onStartPress={handleStartPress} />
+      </View>
+
+      <View style={styles.windowLayer} pointerEvents="box-none">
+        <WindowManager windows={windows} onFocus={focusWindow} onClose={closeWindow} onMove={moveWindow} renderContent={(win) => {
             if (win.type === 'doc') return <DocsEngine />;
             if (win.type === 'tasks') return <TaskManager onClose={() => closeWindow(win.id)} />;
             if (win.type === 'sheet') return <OfficeApp appType="excel" onClose={() => closeWindow(win.id)} />;
             if (win.type === 'slide') return <OfficeApp appType="ppt" onClose={() => closeWindow(win.id)} />;
             return <View style={{ flex: 1, backgroundColor: '#000' }} />;
-          }}
-        />
+        }}/>
       </View>
 
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 20 }} pointerEvents="box-none">
-        <StartMenu 
-          visible={startVisible} 
-          recentApps={apps}
-          onAppPress={handleAppPress}
-        />
+      <View style={styles.startLayer} pointerEvents="box-none">
+        <StartMenu visible={startVisible} recentApps={apps} onAppPress={handleAppPress} />
       </View>
 
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30 }}>
-        <Taskbar onStartPress={handleStartPress} />
-      </View>
-      
       {isMobile && (
-        <BottomNav 
-          onHomePress={() => setStartVisible(false)}
-          onAppsPress={() => setStartVisible(true)}
-          onSearchPress={() => console.log('Search')}
-          onSettingsPress={() => console.log('Settings')}
-          activeTab={startVisible ? 'apps' : 'home'}
-        />
+        <BottomNav onHomePress={() => setStartVisible(false)} onAppsPress={() => setStartVisible(true)} onSearchPress={() => {}} onSettingsPress={() => {}} activeTab={startVisible ? 'apps' : 'home'} />
       )}
     </View>
   );
@@ -269,11 +201,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#05070A',
     overflow: 'hidden',
   },
+  taskbarFixed: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 3000,
+  },
   scrollView: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
   },
   workspace: {
-    paddingTop: 60,
+    paddingTop: 80, 
     paddingHorizontal: 60,
     paddingBottom: 250,
     minHeight: '100%',
@@ -284,97 +223,54 @@ const styles = StyleSheet.create({
     paddingBottom: 250,
     minHeight: '100%',
   },
-  header: {
+  widgetsGrid: {
+    gap: 32,
+  },
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 48,
+    gap: 32,
   },
-  mobileHeader: {
-    marginBottom: 32,
+  mobileColumn: {
+    flexDirection: 'column',
+    gap: 20,
   },
-  greeting: { 
-    fontSize: 28, 
-    fontWeight: '800', 
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  mobileGreeting: {
-    fontSize: 22,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 6,
+  statusCard: {
+    flex: 1,
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
   },
   glassBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
   },
-  statusText: {
-    fontSize: 9,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statusDivider: {
-    color: 'rgba(255,255,255,0.2)',
-    marginHorizontal: 4,
-  },
-  cloudBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  cloudText: { fontSize: 12, fontWeight: '700' },
-  widgetsLayout: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 20,
-  },
-  mobileWidgetsLayout: {
-    flexDirection: 'column',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 20,
-    flex: 1,
-  },
-  mobileColumn: {
-    flexDirection: 'column',
-    gap: 12,
-  },
-  appSection: {
-    marginTop: 40,
+  statusText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
+  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 12 },
+  recentSection: {
+    marginTop: 60,
   },
   sectionTitle: {
     color: 'rgba(255,255,255,0.4)',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 2,
-    marginBottom: 24,
-    paddingHorizontal: 10,
-  },
-  recentSection: {
-    marginTop: 40,
+    marginBottom: 20,
   },
   recentScroll: {
     gap: 16,
-    paddingHorizontal: 10,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
   recentCard: {
-    width: 100,
+    width: 110,
     padding: 12,
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.02)',
@@ -384,9 +280,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   recentIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -403,6 +299,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
   },
+  appSection: {
+    marginTop: 60,
+  },
+  windowLayer: { ...StyleSheet.absoluteFillObject, zIndex: 5000 },
+  startLayer: { ...StyleSheet.absoluteFillObject, zIndex: 6000 },
 });
 
 export default HomeScreen;

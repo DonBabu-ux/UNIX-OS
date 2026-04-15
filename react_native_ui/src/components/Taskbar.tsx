@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 10,
-    zIndex: 1000,
+    zIndex: 2000,
   },
   content: {
     width: Platform.OS === 'web' ? 'auto' : '96%',

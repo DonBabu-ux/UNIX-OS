@@ -88,7 +88,7 @@ export const WindowManager: React.FC<{
   };
 
   return (
-    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {windows.sort((a, b) => a.zIndex - b.zIndex).map(renderWindow)}
     </View>
   );
