@@ -10,11 +10,11 @@ import {
 import { getInstalledApps, AppInfo } from '../../bridge_layer/AppListBridge';
 import { launchApp } from '../../bridge_layer/AppLauncherBridge';
 import Taskbar from '../components/Taskbar';
-import BottomNav from '../components/BottomNav';
 import StartMenu from '../components/StartMenu';
-import DesktopGrid from '../components/DesktopGrid';
+import BottomNav from '../components/BottomNav';
 import Wallpaper from '../components/Wallpaper';
 import HomeFolder from '../components/HomeFolder';
+import DesktopContextMenu from '../components/DesktopContextMenu';
 import { useHomeScreenStore } from '../state/slices/homeScreenSlice';
 import { Grid as GridIcon } from 'lucide-react';
 import { AIWidget, PriorityCard, AISyncCard, PulseChart, TimeWidget } from '../components/Widgets';
@@ -26,6 +26,8 @@ import { useTheme } from '../theme/themeProvider';
 import { useAppsStore, RecentEntry } from '../state/slices/appsSlice';
 import { useResponsive } from '../state/ResponsiveManager';
 import { useSystemStore } from '../state/slices/systemSlice';
+
+const { width: W, height: H } = Dimensions.get('window');
 
 const APP_INFO: Record<string, { name: string; color: string; Icon: React.ElementType }> = {
   'internal.word':        { name: 'Univa Docs',     color: '#0078D4', Icon: FileText },
@@ -52,11 +54,13 @@ const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { isMobile } = useResponsive();
   const { recentlyOpened, trackRecentApp } = useAppsStore();
-  const { folders, gridItems } = useHomeScreenStore();
+  const { folders, gridItems, addFolder } = useHomeScreenStore();
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [startVisible, setStartVisible] = useState(false);
   const [windows, setWindows] = useState<WindowInstance[]>([]);
   const [zCounter, setZCounter] = useState(100);
+  
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
 
   const openAppWindow = (type: string, title: string) => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -109,11 +113,18 @@ const HomeScreen: React.FC = () => {
 
   const { isAdminAuthenticated, openModal } = useSystemStore();
 
-  const handleAdminPress = () => {
-    if (isAdminAuthenticated) {
-      openModal({ type: 'ADMIN_CONTROL', title: 'ADMINISTRATOR CENTER' });
-    } else {
-      openModal({ type: 'ADMIN_AUTH', title: 'SYSTEM SECURITY GATE' });
+  const handleContextMenu = (e: any) => {
+     if (Platform.OS === 'web') {
+       e.preventDefault();
+       setContextMenu({ visible: true, x: e.pageX, y: e.pageY });
+     }
+  };
+
+  const handleContextAction = (action: string) => {
+    if (action === 'NEW_FOLDER') {
+      addFolder('New Folder', []);
+    } else if (action === 'REFRESH') {
+      loadApps();
     }
   };
 
@@ -125,95 +136,60 @@ const HomeScreen: React.FC = () => {
 
       <ScrollView 
         style={styles.scrollView} 
-        contentContainerStyle={[styles.workspace, isMobile && styles.mobileWorkspace]}
+        contentContainerStyle={styles.workspace}
         showsVerticalScrollIndicator={true}
-        scrollEventThrottle={16}
-        decelerationRate="normal"
+        onResponderRelease={() => setContextMenu({ ...contextMenu, visible: false })}
+        // @ts-ignore
+        onContextMenu={handleContextMenu}
       >
-        {/* Modular Header Widgets */}
-        <View style={styles.widgetsGrid}>
-           {isMobile && <TimeWidget isHacker={true} />}
-
-           <View style={[styles.row, isMobile && styles.mobileColumn]}>
-              <View style={[styles.statusCard, theme.glassEffect]}>
-                 <View style={[styles.glassBadge, { borderColor: theme.success + '44' }]}>
-                   <Shield size={10} color={theme.success} />
-                   <Text style={[styles.statusText, { color: theme.success }]}>Security: Optimal</Text>
-                 </View>
-                 <Text style={styles.cardTitle}>Systems Operational</Text>
-              </View>
-              <View style={[styles.statusCard, theme.glassEffect]}>
-                 <View style={[styles.glassBadge, { borderColor: theme.accent + '44' }]}>
-                   <Zap size={10} color={theme.accent} />
-                   <Text style={[styles.statusText, { color: theme.accent }]}>Neural Engine: 98%</Text>
-                 </View>
-                 <Text style={styles.cardTitle}>Cloud Engine Active</Text>
-              </View>
+        {/* ── Status Bar Overlay (Glassmorphism) ── */}
+        <View style={styles.topStatusLayer}>
+           <View style={[styles.glassBadge, { borderColor: theme.success + '44' }]}>
+             <Shield size={10} color={theme.success} />
+             <Text style={[styles.statusText, { color: theme.success }]}>Security: Optimal</Text>
            </View>
-
-           <AIWidget />
-
-           <View style={[styles.row, isMobile && styles.mobileColumn]}>
-              <PriorityCard />
-              {!isMobile && <TimeWidget />}
-           </View>
-
-           {!isMobile && <PulseChart />}
-
-           <View style={[styles.row, isMobile && styles.mobileColumn]}>
-              <AISyncCard title="Update Core Kernel" category="System" icon="🛠️" />
-              <AISyncCard title="Network Sync" category="Cloud" icon="📡" />
+           <View style={[styles.glassBadge, { borderColor: theme.accent + '44' }]}>
+             <Zap size={10} color={theme.accent} />
+             <Text style={[styles.statusText, { color: theme.accent }]}>Neural Active</Text>
            </View>
         </View>
 
-        {/* ── Priority Shelf (Mobile Only) ── */}
-        {isMobile && recentlyOpened.length > 0 && (
-          <View style={styles.mobilePrioritySection}>
-            <Text style={styles.sectionTitle}>PRIORITY ACCESS</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.priorityScroll}>
-              {recentlyOpened.slice(0, 5).map((recent) => (
-                <TouchableOpacity key={recent.pkg} style={styles.priorityItem} onPress={() => handleAppPress(recent.pkg)}>
-                  <View style={[styles.priorityIcon, { backgroundColor: theme.primary + '33' }]}>
-                    <GridIcon size={20} color={theme.primary} />
-                  </View>
-                  <Text style={styles.priorityLabel}>{recent.pkg.split('.').pop()}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          </View>
-        )}
-
-        {/* ── Main Dynamic Workspace (Apps & Folders) ── */}
-        <View style={styles.appSection}>
-          <Text style={styles.sectionTitle}>WORKSPACE</Text>
-          <View style={[styles.mainGrid, isMobile && styles.mobileGridAdjustment]}>
-            {gridItems.map((item) => {
-              if (item.type === 'FOLDER') {
-                const folder = folders.find(f => f.id === item.target);
-                if (!folder) return null;
-                return <HomeFolder key={item.id} folder={folder} onAppPress={handleAppPress} />;
-              } else if (item.type === 'APP') {
-                return (
-                  <TouchableOpacity key={item.id} style={styles.desktopIcon} onPress={() => handleAppPress(item.target)}>
-                    <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }]}>
-                      <GridIcon size={24} color={theme.primary} />
-                    </View>
-                    <Text style={styles.iconLabel}>{item.target.split('.').pop()}</Text>
-                  </TouchableOpacity>
-                );
-              }
-              return null;
-            })}
-          </View>
+        {/* ── Windows-Style Desktop Grid (Top-Left Aligned) ── */}
+        <View style={styles.desktopEnvironment}>
+           <View style={styles.iconVerticalGrid}>
+              {gridItems.map((item) => {
+                  if (item.type === 'FOLDER') {
+                      const folder = folders.find(f => f.id === item.target);
+                      if (!folder) return null;
+                      return <HomeFolder key={item.id} folder={folder} onAppPress={handleAppPress} />;
+                  } else if (item.type === 'APP') {
+                      return (
+                          <TouchableOpacity key={item.id} style={styles.desktopIcon} onPress={() => handleAppPress(item.target)}>
+                             <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }]}>
+                               <GridIcon size={24} color={theme.primary} />
+                             </View>
+                             <Text style={styles.iconLabel}>{item.target.split('.').pop()}</Text>
+                          </TouchableOpacity>
+                      );
+                  }
+                  return null;
+              })}
+           </View>
         </View>
 
-        <View style={{ height: 100 }} />
+
+        <View style={{ height: 1 }} />
+
       </ScrollView>
 
       {/* Taskbar Fixed at BOTTOM (No Negotiation) */}
       <View style={styles.taskbarFixed} pointerEvents="box-none">
-        <Taskbar onStartPress={handleStartPress} />
+        <Taskbar 
+            onStartPress={handleStartPress} 
+            activeWindows={windows} 
+            onWindowPress={(id) => focusWindow(id)} 
+            onWindowClose={closeWindow} 
+        />
       </View>
 
       <View style={styles.windowLayer} pointerEvents="box-none">
@@ -236,6 +212,14 @@ const HomeScreen: React.FC = () => {
       <View style={styles.startLayer} pointerEvents="box-none">
         <StartMenu visible={startVisible} recentApps={apps} onAppPress={handleAppPress} />
       </View>
+
+      <DesktopContextMenu 
+        visible={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+        onAction={handleContextAction}
+      />
 
       {isMobile && (
         <BottomNav onHomePress={() => setStartVisible(false)} onAppsPress={() => setStartVisible(true)} onSearchPress={() => {}} onSettingsPress={() => {}} activeTab={startVisible ? 'apps' : 'home'} />
@@ -261,35 +245,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   workspace: {
-    paddingTop: 80, 
-    paddingHorizontal: 60,
-    paddingBottom: 250,
+    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 100,
     minHeight: '100%',
   },
-  mobileWorkspace: {
-    paddingTop: 30,
-    paddingHorizontal: 16,
-    paddingBottom: 250,
-    minHeight: '100%',
-  },
-  widgetsGrid: {
-    gap: 32,
-  },
-  row: {
+  topStatusLayer: {
     flexDirection: 'row',
-    gap: 32,
+    gap: 12,
+    marginBottom: 40,
   },
-  mobileColumn: {
-    flexDirection: 'column',
-    gap: 20,
-  },
-  statusCard: {
+  desktopEnvironment: {
     flex: 1,
-    padding: 24,
-    borderRadius: 16,
+  },
+  iconVerticalGrid: {
+    flexDirection: 'column',
+    flexWrap: 'wrap',
+    height: H * 0.7,
+    gap: 12,
+  },
+  desktopIcon: {
+    width: 80,
+    height: 100,
+    alignItems: 'center',
+    gap: 4,
+  },
+  iconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  iconLabel: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+    textShadow: '0px 1px 2px rgba(0,0,0,0.5)',
+    width: 70,
   },
   glassBadge: {
     flexDirection: 'row',
@@ -303,76 +299,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 12 },
-  appSection: {
-    marginTop: 40,
-  },
-  mobilePrioritySection: {
-    marginTop: 30,
-    marginBottom: 10,
-  },
-  priorityScroll: {
-    gap: 16,
-    paddingBottom: 10,
-  },
-  priorityItem: {
-    alignItems: 'center',
-    width: 64,
-    gap: 8,
-  },
-  priorityIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  priorityLabel: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-    opacity: 0.8,
-  },
-  divider: {
-    height: 1,
-    marginTop: 20,
-    marginBottom: 10,
-    opacity: 0.1,
-  },
-  mainGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 20,
-    justifyContent: 'flex-start',
-  },
-  mobileGridAdjustment: {
-    justifyContent: 'center',
-  },
-  desktopIcon: {
-    width: 80,
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 20,
-  },
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconLabel: {
-    color: '#E2E8F0',
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: {width: 0, height: 1},
-    textShadowRadius: 2,
-  },
   windowLayer: { ...StyleSheet.absoluteFillObject, zIndex: 5000 },
   startLayer: { ...StyleSheet.absoluteFillObject, zIndex: 6000 },
 });
+
 
 export default HomeScreen;

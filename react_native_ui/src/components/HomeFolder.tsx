@@ -78,7 +78,13 @@ const styles = StyleSheet.create({
   folderPreview: { width: 64, height: 64, borderRadius: 16, borderWidth: 1, padding: 8, justifyContent: 'center', alignItems: 'center' },
   miniGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 40, height: 40, gap: 4, justifyContent: 'center', alignItems: 'center' },
   miniApp: { width: 16, height: 16, borderRadius: 4 },
-  folderName: { color: '#fff', fontSize: 11, fontWeight: '600', marginTop: 8, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 0, height: 1}, textShadowRadius: 2 },
+  folderName: { 
+    color: '#fff', 
+    fontSize: 11, 
+    fontWeight: '600', 
+    marginTop: 8, 
+    textShadow: '0px 1px 2px rgba(0,0,0,0.5)' 
+  },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   expandedFolder: { width: W * 0.8, maxWidth: 400, borderRadius: 24, borderWidth: 1, padding: 24, paddingBottom: 40 },
   folderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },

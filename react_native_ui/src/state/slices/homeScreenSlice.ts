@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { storage } from '../../../local_storage/storage';
 
 export interface FolderItem {
   id: string;
@@ -56,7 +55,15 @@ export const useHomeScreenStore = create<HomeState>()(
     }),
     {
       name: 'univa-home-grid',
-      storage: createJSONStorage(() => storage),
+      storage: createJSONStorage(() => {
+        // Defensive Adaptive Storage
+        const isWeb = typeof window !== 'undefined';
+        return {
+          getItem: (name) => isWeb ? localStorage.getItem(name) : null,
+          setItem: (name, value) => isWeb ? localStorage.setItem(name, value) : null,
+          removeItem: (name) => isWeb ? localStorage.removeItem(name) : null,
+        };
+      }),
     }
   )
 );

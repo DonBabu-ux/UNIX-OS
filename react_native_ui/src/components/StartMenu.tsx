@@ -122,7 +122,7 @@ const StartMenu: React.FC<StartMenuProps> = React.memo(({ visible, recentApps, o
 });
 
 const styles = StyleSheet.create({
-  overlay: {
+  startOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'flex-end',
